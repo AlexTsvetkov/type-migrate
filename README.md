@@ -2,6 +2,8 @@
 
 **Flyway for the SAP Commerce type system — versioned, reviewable schema migrations with a dry-run diff and safe rollback.**
 
+**🌐 Live site: https://alextsvetkov.github.io/type-migrate/**
+
 > ⚠️ **Status:** early scaffold. The core abstraction, a starter implementation and tests are real; this is a foundation to build on, not a finished product. See [Roadmap](#roadmap).
 
 **Stack:** Java 21 + Gradle.
