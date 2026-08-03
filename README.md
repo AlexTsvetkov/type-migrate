@@ -137,7 +137,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md). Conventional commits; generated code s
 - **Kill criterion.** If a design-partner DBA won't let it run non-read-only in a pre-prod env within ~2 months, the trust curve is too steep for a small team.
 - **Verdict.** **Defer.** Highest blast radius (writes to prod schemas) + long trust cycle; only after a trusted install base exists.
 
-See the full landscape, go-to-market and the **IP / conflict-of-interest** discussion in [sap-commerce-general-ideas-for-startup.md](https://github.com/AlexTsvetkov/sap-commerce-ideas-for-projects/blob/main/ideas-for-startup/sap-commerce-general-ideas-for-startup.md).
+This assessment is part of a broader, self-critical analysis of the whole tool suite (problem landscape, go-to-market, and an IP / conflict-of-interest review) maintained privately by the author.
 
 ---
 
