@@ -69,6 +69,48 @@
   </div>
 </section>
 
+<section>
+  <div class="wrap">
+    <h2>Usage example</h2>
+    <p class="lead"><span class="k">MigrationPlanner</span> diffs two <span class="k">TypeModel</span>s into impact-tagged <span class="k">SchemaChange</span>s (SAFE / REVIEW / DESTRUCTIVE), rolls them into a <span class="k">MigrationPlan</span>, and computes an exact inverse via <span class="k">rollback()</span>. Fully offline — no HAC.</p>
+    <pre><code>TypeModel current = TypeModel.builder()
+        .type("Product",  Map.of("code", "java.lang.String", "price", "java.lang.Double", "oldFlag", "java.lang.Boolean"))
+        .type("Customer", Map.of("uid", "java.lang.String"))
+        .type("Legacy",   Map.of("note", "java.lang.String"))
+        .build();
+
+TypeModel target = TypeModel.builder()
+        .type("Product",  Map.of("code", "java.lang.String", "price", "java.math.BigDecimal", "newFlag", "java.lang.Boolean"))
+        .type("Customer", Map.of("uid", "java.lang.String", "email", "java.lang.String"))
+        .type("Voucher",  Map.of("code", "java.lang.String"))
+        .build();
+
+// 1) diff(): the individual, impact-tagged changes.
+for (SchemaChange c : MigrationPlanner.diff(current, target)) {
+    System.out.println(c.describe());
+}
+
+// 2) plan(): the rollup.
+MigrationPlan plan = new MigrationPlanner().plan(current, target);
+System.out.println("changes=" + plan.changes().size()
+        + " destructive=" + plan.isDestructive()
+        + " summary=" + plan.summary());
+
+// 3) rollback(): the exact inverse (target -&gt; current).
+System.out.println("rollback == diff(target,current)? "
+        + plan.rollback().changes().equals(MigrationPlanner.diff(target, current)));</code></pre>
+    <p class="lead" style="margin:18px 0 8px">Output:</p>
+    <pre>[SAFE] ADD_ATTRIBUTE Customer.email (java.lang.String)
+[DESTRUCTIVE] REMOVE_TYPE Legacy
+[SAFE] ADD_ATTRIBUTE Product.newFlag (java.lang.Boolean)
+[DESTRUCTIVE] REMOVE_ATTRIBUTE Product.oldFlag (java.lang.Boolean)
+[REVIEW] CHANGE_ATTRIBUTE_TYPE Product.price (java.lang.Double -&gt; java.math.BigDecimal)
+[SAFE] ADD_TYPE Voucher
+changes=6 destructive=true summary={SAFE=3, REVIEW=1, DESTRUCTIVE=2}
+rollback == diff(target,current)? true</pre>
+  </div>
+</section>
+
 <footer><div class="wrap"><p>type-migrate · MIT License · © 2026 Aliaksandr Tsviatkou<br/>Part of a backend tooling suite for SAP Commerce Cloud.</p></div></footer>
 </body>
 </html>

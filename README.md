@@ -47,6 +47,70 @@ gradle build
 gradle test
 ```
 
+## Usage
+
+Build a current and target `TypeModel`, then `MigrationPlanner` gives you the
+individual `SchemaChange`s (each with a SAFE / REVIEW / DESTRUCTIVE `Impact`), a
+rolled-up `MigrationPlan`, a human-readable `dryRun` report, and an exact inverse
+via `plan.rollback()`. This is the fully offline path — it never touches HAC. The
+full runnable tutorial is at
+`src/main/java/com/sapcommercetools/typemigrate/examples/Example.java`:
+
+```java
+TypeModel current = TypeModel.builder()
+        .type("Product",  Map.of("code", "java.lang.String", "price", "java.lang.Double", "oldFlag", "java.lang.Boolean"))
+        .type("Customer", Map.of("uid", "java.lang.String"))
+        .type("Legacy",   Map.of("note", "java.lang.String"))
+        .build();
+
+TypeModel target = TypeModel.builder()
+        .type("Product",  Map.of("code", "java.lang.String", "price", "java.math.BigDecimal", "newFlag", "java.lang.Boolean"))
+        .type("Customer", Map.of("uid", "java.lang.String", "email", "java.lang.String"))
+        .type("Voucher",  Map.of("code", "java.lang.String"))
+        .build();
+
+// 1) diff(): the individual, impact-tagged changes.
+for (SchemaChange c : MigrationPlanner.diff(current, target)) {
+    System.out.println(c.describe());
+}
+
+// 2) plan(): the rollup.
+MigrationPlan plan = new MigrationPlanner().plan(current, target);
+System.out.println("changes=" + plan.changes().size()
+        + " destructive=" + plan.isDestructive()
+        + " summary=" + plan.summary());
+
+// 3) rollback(): the exact inverse (target -> current).
+System.out.println("rollback == diff(target,current)? "
+        + plan.rollback().changes().equals(MigrationPlanner.diff(target, current)));
+```
+
+```text
+Output:
+[SAFE] ADD_ATTRIBUTE Customer.email (java.lang.String)
+[DESTRUCTIVE] REMOVE_TYPE Legacy
+[SAFE] ADD_ATTRIBUTE Product.newFlag (java.lang.Boolean)
+[DESTRUCTIVE] REMOVE_ATTRIBUTE Product.oldFlag (java.lang.Boolean)
+[REVIEW] CHANGE_ATTRIBUTE_TYPE Product.price (java.lang.Double -> java.math.BigDecimal)
+[SAFE] ADD_TYPE Voucher
+changes=6 destructive=true summary={SAFE=3, REVIEW=1, DESTRUCTIVE=2}
+rollback == diff(target,current)? true
+```
+
+The `dryRun(current, target)` report (also shown in the tutorial) prepends a
+`!! WARNING: DESTRUCTIVE migration` banner when any change would lose data.
+
+Gradle is not required. Compile and run the full tutorial with the plain JDK (Java 21):
+
+```bash
+find src/main/java -name '*.java' | xargs javac -d out
+java -cp out com.sapcommercetools.typemigrate.examples.Example
+```
+
+> With Gradle installed you can instead wire a `JavaExec` task
+> (`mainClass = 'com.sapcommercetools.typemigrate.examples.Example'`) and run
+> `gradle run`; the `javac`/`java` path above always works with just the JDK.
+
 ## Roadmap
 
 - [x] Implement the core capability with real logic + unit tests.
